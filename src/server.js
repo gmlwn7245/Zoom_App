@@ -32,7 +32,8 @@ const wss = new WebSocket.Server({ server });
 
 // socket -> 연결된(접속) 사람의 정보 담김 
 function handleConnection(socket) {
-    console.log(socket)
+    console.log("Connected to Browser!");
+    socket.send("Hello Socket!");
 }
 
 // http 접속 -> connection event 발생 -> ws으로 넘어감
