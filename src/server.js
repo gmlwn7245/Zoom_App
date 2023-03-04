@@ -35,17 +35,31 @@ const sockets = [];
 // socket -> 연결된(접속) 사람의 정보 담김 
 function handleConnection(socket) {
     sockets.push(socket);       // 연결된 소켓 모두 저장 
+    socket["nickname"] = "Anonymous";   // 첫 별명은 익명으로 설정
     console.log("Connected to Browser!");
 
     // Server Side 알림 
-    socket.on("message", (message) => {
-        // socket.send(message.toString("utf8")); // Browser로부터 받은 message 다시 전송  (utf8 설정)
-        sockets.forEach((aSocket) => aSocket.send(message.toString("utf8")));   // 연결중인 소켓에게 모두 전송 
+    socket.on("message", (msg) => {
+        // message.toString() 작업 필요
+        const message = JSON.parse(msg);
+
+        switch(message.type){
+            case "new_message":{
+                sockets.forEach((aSocket) => aSocket.send(`${socket.nickname}:${message.payload}`));   // 연결중인 소켓에게 모두 전송 
+                break;
+            }
+            case "nickname":{
+                socket["nickname"]=message.payload;
+                break;
+            }
+        }
+        
     }); 
     socket.on("close", () => {console.log("Disconnected from the Browser");});
 }
 
-// http 접속 -> connection event 발생 -> ws으로 넘어감
+// http 접속 -> connection event 발생 -> ws으로 넘어감  
+// Disconnect 전까지는 State 유지
 wss.on("connection", handleConnection);
 
 server.listen(3000, handleListen);
