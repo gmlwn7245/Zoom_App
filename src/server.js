@@ -23,17 +23,26 @@ const handleListen = () => console.log(`Listening on http://localhost:3000`);
 // Server Port Number
 // app.listen(3000);
 
-
 /* WS 방식 */
 
 // http 서버 및 WS 생성 -> http 서버 위에서 webSocket 서버 생성 (개발의 효율성을 위함 이렇게 할 필요까지 없음)
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// 임시용 데이터베이스 
+const sockets = [];
+
 // socket -> 연결된(접속) 사람의 정보 담김 
 function handleConnection(socket) {
+    sockets.push(socket);       // 연결된 소켓 모두 저장 
     console.log("Connected to Browser!");
-    socket.send("Hello Socket!");
+
+    // Server Side 알림 
+    socket.on("message", (message) => {
+        // socket.send(message.toString("utf8")); // Browser로부터 받은 message 다시 전송  (utf8 설정)
+        sockets.forEach((aSocket) => aSocket.send(message.toString("utf8")));   // 연결중인 소켓에게 모두 전송 
+    }); 
+    socket.on("close", () => {console.log("Disconnected from the Browser");});
 }
 
 // http 접속 -> connection event 발생 -> ws으로 넘어감
