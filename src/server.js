@@ -1,6 +1,8 @@
 import express from "express";
+import SocketIO from "socket.io";
 import http from "http";
-import WebSocket from "ws";
+// import WebSocket from "ws";
+
 
 const app = express();
 
@@ -20,46 +22,15 @@ app.get("/*", (req, res) => res.redirect("/"));
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 
-// Server Port Number
-// app.listen(3000);
 
 /* WS 방식 */
 
-// http 서버 및 WS 생성 -> http 서버 위에서 webSocket 서버 생성 (개발의 효율성을 위함 이렇게 할 필요까지 없음)
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+// SocektIO Server 생성시 HTTP Server 보내줌; 
+const httpServer = http.createServer(app);
+const wsServer = SocketIO(httpServer);
 
-// 임시용 데이터베이스 
-const sockets = [];
+wsServer.on("connection", (socket) => {
+    console.log(socket);
+})
 
-// socket -> 연결된(접속) 사람의 정보 담김 
-function handleConnection(socket) {
-    sockets.push(socket);       // 연결된 소켓 모두 저장 
-    socket["nickname"] = "Anonymous";   // 첫 별명은 익명으로 설정
-    console.log("Connected to Browser!");
-
-    // Server Side 알림 
-    socket.on("message", (msg) => {
-        // message.toString() 작업 필요
-        const message = JSON.parse(msg);
-
-        switch(message.type){
-            case "new_message":{
-                sockets.forEach((aSocket) => aSocket.send(`${socket.nickname}:${message.payload}`));   // 연결중인 소켓에게 모두 전송 
-                break;
-            }
-            case "nickname":{
-                socket["nickname"]=message.payload;
-                break;
-            }
-        }
-        
-    }); 
-    socket.on("close", () => {console.log("Disconnected from the Browser");});
-}
-
-// http 접속 -> connection event 발생 -> ws으로 넘어감  
-// Disconnect 전까지는 State 유지
-wss.on("connection", handleConnection);
-
-server.listen(3000, handleListen);
+httpServer.listen(3000, handleListen);
