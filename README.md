@@ -10,5 +10,6 @@ WebSocket과 WebRTC를 이용한 줌 클론 만들기
 - VSCode
 - Node.js
 - Express
+- SocketIO
 - WebSocket
 - WebRTC

@@ -30,7 +30,12 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
-    console.log(socket);
+    socket.on("enter_room", (roomName, done) => {
+        console.log(roomName);
+        setTimeout(()=>{
+            done("Fin!!");     // FE함수로, FE에서만 실행됨!!!!! (중요) - 보안 문제도 있기 때문(DB 조작 등)
+        }, 1000);
+    });
 })
 
 httpServer.listen(3000, handleListen);
