@@ -14,8 +14,37 @@ let roomName;
 function showRoom() {
     welcome.hidden = true;
     room.hidden = false;
+
+    // 룸 네임 보여주기
     const h3 = room.querySelector("h3");
     h3.innerText = `Room ${roomName}`;
+
+    // 닉네임
+    const nameForm = room.querySelector("#name");
+    nameForm.addEventListener("submit", handleNicknameSubmit);
+    
+    // 메세지 입출력
+    const msgForm = room.querySelector("#msg");
+    msgForm.addEventListener("submit", handleMessageSubmit)
+}
+
+function handleNicknameSubmit(event){
+    event.preventDefault();
+    const input = room.querySelector("#name input");
+    const value = input.value;
+
+    socket.emit("nickname", value);
+
+}
+
+function handleMessageSubmit(event){
+    event.preventDefault();
+    const input = room.querySelector("#msg input");
+    const value = input.value;      // 
+    socket.emit("new_message", input.value, roomName, () => {
+        addMessage(`You: ${value}`);
+    });
+    input.value = "";
 }
 
 function handleRoomSubmit(event){
@@ -40,7 +69,38 @@ form.addEventListener("submit", handleRoomSubmit);
 
 
 // 입장시 메세지
-socket.on("welcome", () => {
+socket.on("welcome", (user, newCount) => {
     console.log("welcome");
-    addMessage("Someone Joined!");
-})
+    addMessage(`${user} Arrived!`);
+
+    // 룸 네임 보여주기
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+});
+
+// 퇴장시 메세지
+socket.on("bye", (user, newCount) => {
+    addMessage(`${user} Left ㅠㅠ`);
+
+    // 룸 네임 보여주기
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+});
+
+// console.log ==== (msg) => {console.log(msg)} 와 같은 동작
+
+// 룸 채팅 메세지 
+socket.on("new_message", addMessage);
+
+// 룸 생성 알림 
+socket.on("room_change", (rooms) => {
+    const roomList = welcome.querySelector("ul");
+    roomList.innerHTML = "";
+
+    // rooms가 null이면 동작 안 함
+    rooms.forEach(room => {
+        const li = document.createElement("li");
+        li.innerText = room;
+        roomList.append(li);
+    });
+});      
