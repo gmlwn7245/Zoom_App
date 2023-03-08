@@ -30,12 +30,23 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", (socket) => {
-    socket.on("enter_room", (roomName, done) => {
-        console.log(roomName);
-        setTimeout(()=>{
-            done("Fin!!");     // FE함수로, FE에서만 실행됨!!!!! (중요) - 보안 문제도 있기 때문(DB 조작 등)
-        }, 1000);
+    // Socket의 모든 이벤트를 살핌
+    socket.onAny((event) => {
+        console.log(`Socket Event : ${event}`);
     });
+
+
+    // 방 참가
+    socket.on("enter_room", (roomName, done) => {
+        
+        // socket.io에서 기본으로 제공하는 ROOM 기능 = join
+        socket.join(roomName.payload);
+        done();     // FE함수로, FE에서만 실행됨!!!!! (중요) - 보안 문제도 있기 때문(DB 조작 등)
+        
+        socket.to(roomName.payload).emit("welcome");
+    });
+
+    // 방 탈출
 })
 
 httpServer.listen(3000, handleListen);
