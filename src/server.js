@@ -1,6 +1,7 @@
 import express from "express";
-import SocketIO from "socket.io";
+import {Server} from "socket.io";
 import http from "http";
+import {instrument} from "@socket.io/admin-ui";
 // import WebSocket from "ws";
 
 
@@ -27,8 +28,17 @@ const handleListen = () => console.log(`Listening on http://localhost:3000`);
 
 // SocektIO Server 생성시 HTTP Server 보내줌; 
 const httpServer = http.createServer(app);
-const wsServer = SocketIO(httpServer);
+const wsServer = new Server(httpServer, {
+    cors: {
+      origin: ["https://admin.socket.io"],
+      credentials: true
+    }
+});
 
+// http://localhost:3000/admin 관리자 페이지 위치
+instrument(wsServer, {
+    auth: false
+});
 
 // 생성된 ROOM LIST
 function publicRooms() {
