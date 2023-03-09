@@ -1,106 +1,55 @@
-// BackEnd와 socket.io를 자동적으로 연결해주는 Function
-// 자동으로 BE로 socket 전송 
 const socket = io();
 
-const welcome = document.getElementById("welcome");
-const form = welcome.querySelector("form");
-const room = document.getElementById("room");
+// 해당 브라우저 화면 정보
+const myFace = document.getElementById("myFace");
+const muteBtn = document.getElementById("mute");
+const cameraBtn = document.getElementById("camera");
 
-// 화면에 안보이게 하기
-room.hidden = true;
+let myStream;
+let muted = false;
+let cameraOff = false;
 
-let roomName;
+// 참조 : https://developer.mozilla.org/ko/docs/Web/API/MediaDevices/getUserMedia
+async function getMedia(){
+    try {
+        /* 스트림 사용 */
+        myStream = await navigator.mediaDevices.getUserMedia({
+            audio:true,
+            video:true
+        });
 
-function showRoom() {
-    welcome.hidden = true;
-    room.hidden = false;
-
-    // 룸 네임 보여주기
-    const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName}`;
-
-    // 닉네임
-    const nameForm = room.querySelector("#name");
-    nameForm.addEventListener("submit", handleNicknameSubmit);
-    
-    // 메세지 입출력
-    const msgForm = room.querySelector("#msg");
-    msgForm.addEventListener("submit", handleMessageSubmit)
+        /* 화면에 비디오 화면 띄우기 */
+        myFace.srcObject = myStream;
+        console.log(myStream);
+    } catch(e) {
+        /* 오류 처리 */
+        console.log(e);
+    }
 }
 
-function handleNicknameSubmit(event){
-    event.preventDefault();
-    const input = room.querySelector("#name input");
-    const value = input.value;
+getMedia();
 
-    socket.emit("nickname", value);
-
+function handleMuteClick(){
+    if(!muted){
+        muteBtn.innerText = "UnMute";
+        muted = true;
+    }else {
+        muteBtn.innerText = "Mute";
+        muted = false;
+    }
+    console.log("click Mute BTN");
+}
+function handleCameraClick(){
+    if(cameraOff){
+        cameraBtn.innerText = "Turn Camera Off";
+        cameraOff = false;
+    }else {
+        cameraBtn.innerText = "Turn Camera On";
+        cameraOff = true;
+    }
+    console.log("click Camera BTN");
 }
 
-function handleMessageSubmit(event){
-    event.preventDefault();
-    const input = room.querySelector("#msg input");
-    const value = input.value;      // 
-    socket.emit("new_message", input.value, roomName, () => {
-        addMessage(`You: ${value}`);
-    });
-    input.value = "";
-}
+muteBtn.addEventListener("click", handleMuteClick);
+cameraBtn.addEventListener("click", handleCameraClick);
 
-function handleRoomSubmit(event){
-    event.preventDefault();
-    const input = form.querySelector("input");
-    roomName = input.value;
-
-    // emit(이벤트명, BE로 전달할 객체, FE에서 호출될 함수) => 이벤트명 이하 파라미터는 개수, 형식 관계없이 마음대로 작성
-    // 다만 Server에서 작업이 끝난 후 실행되었으면 하는 함수는 마지막 파라미터로 넣어주기!
-    socket.emit("enter_room", { payload : input.value }, showRoom); 
-    input.value = "";
-}
-
-function addMessage(message){
-    const ul = room.querySelector("ul");
-    const li = document.createElement("li");
-    li.innerText = message;
-    ul.appendChild(li);
-}
-
-form.addEventListener("submit", handleRoomSubmit);
-
-
-// 입장시 메세지
-socket.on("welcome", (user, newCount) => {
-    console.log("welcome");
-    addMessage(`${user} Arrived!`);
-
-    // 룸 네임 보여주기
-    const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName} (${newCount})`;
-});
-
-// 퇴장시 메세지
-socket.on("bye", (user, newCount) => {
-    addMessage(`${user} Left ㅠㅠ`);
-
-    // 룸 네임 보여주기
-    const h3 = room.querySelector("h3");
-    h3.innerText = `Room ${roomName} (${newCount})`;
-});
-
-// console.log ==== (msg) => {console.log(msg)} 와 같은 동작
-
-// 룸 채팅 메세지 
-socket.on("new_message", addMessage);
-
-// 룸 생성 알림 
-socket.on("room_change", (rooms) => {
-    const roomList = welcome.querySelector("ul");
-    roomList.innerHTML = "";
-
-    // rooms가 null이면 동작 안 함
-    rooms.forEach(room => {
-        const li = document.createElement("li");
-        li.innerText = room;
-        roomList.append(li);
-    });
-});      
