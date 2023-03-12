@@ -17,18 +17,26 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", socket => {
+    /* room 입장 - (App.js) 유저들로부터 offer 받기 */
     socket.on("join_room", (roomName)=> {
         socket.join(roomName);
         socket.to(roomName).emit("welcome");    // to => sender 제외
-    })
+    });
 
+    /* offer 받음 - (App.js) offer remote 등록 후 answer 제공해줌 */
     socket.on("offer", (offer, roomName) => {
         socket.to(roomName).emit("offer", offer);
     });
 
+    /* answer 받음 - (App.js) answer remote 등록 */
     socket.on("answer", (answer, roomName) => {
         socket.to(roomName).emit("answer", answer);
-    })
+    });
+
+    /* ICE 받음 - (App.js) ice 넣어줌 */
+    socket.on("ice", (ice, roomName) => {
+        socket.to(roomName).emit("ice", ice);
+    });
 })
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);

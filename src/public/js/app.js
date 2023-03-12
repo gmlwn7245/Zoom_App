@@ -1,5 +1,13 @@
 const socket = io();
 
+/** 
+ * Mobile 에서 사용하기
+ * > 서버 run 
+ * > npm i -g localtunnel
+ * > lt --port 3000
+ * > link 방문
+ */
+
 // 해당 브라우저 화면 정보
 const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
@@ -106,6 +114,13 @@ function handleCameraClick(){
 
 async function handleCameraChange(){
     await getMedia(camerasSelect.value);
+
+    /* 다른 Peer에 있는 my track 바꾸기 */
+    if(myPeerConnection){
+        const videoTrack = myStream.getVideoTracks()[0];
+        const videoSender = myPeerConnection.getSenders().find((sender) => sender.track.kind === "video");
+        videoSender.replaceTrack(videoTrack);
+    }
 }
 
 muteBtn.addEventListener("click", handleMuteClick);
@@ -148,24 +163,48 @@ socket.on("welcome", async () => {
 });
 
 socket.on("offer", async (offer) => {
+    console.log("received the offer");
+
     myPeerConnection.setRemoteDescription(offer);
     const answer = await myPeerConnection.createAnswer();
     myPeerConnection.setLocalDescription(answer);
 
-    socket.emit("answer", answer);
+    console.log("sent the answer");
+    socket.emit("answer", answer, roomName);
 });
 
 socket.on("answer", (answer)=>{
+    console.log("Received the Answer");
     myPeerConnection.setRemoteDescription(answer);
-})
+});
+
+socket.on("ice", (ice) => {
+    console.log("Received Candidate");
+    myPeerConnection.addIceCandidate(ice);
+});
 
 // RTC
 
 function makeConnection(){
     // Server.js 에서 callback으로 실행하면 너무 빠르게 일어나서 offer의 setRemoteDescription때 에러가 발생
     myPeerConnection = new RTCPeerConnection();
+    myPeerConnection.addEventListener("icecandidate", handleIce);
+    myPeerConnection.addEventListener("track", handleTrack);
 
     /* myStream 데이터 저장하기 - P2P 로 데이터 보내기 위함 */
     myStream.getTracks().forEach(track => myPeerConnection.addTrack(track, myStream));
+}
+
+function handleTrack(data) {
+    console.log("got an event from my peer");
+    //console.log("Peer's Stream", data.streams[0]);
+    const peerFace = document.getElementById("peerFace");
+    peerFace.srcObject = data.streams[0];
+    //console.log("My Stream", myStream);
+}
+
+function handleIce(data) {
+    console.log("Sent Candidate");
+    socket.emit("ice", data.candidate, roomName);
 }
 
