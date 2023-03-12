@@ -6,9 +6,17 @@ const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const camerasSelect = document.getElementById("cameras");
 
+const welcome = document.getElementById("welcome");
+const welcomeForm = welcome.querySelector("form");
+const call = document.getElementById("call");
+
+call.hidden = true;
+
 let myStream;
 let muted = false;
 let cameraOff = false;
+let roomName;
+let myPeerConnection;
 
 async function getCameras() {
     try{
@@ -28,7 +36,7 @@ async function getCameras() {
         });
         
 
-        console.log(cameras);
+        //console.log(cameras);
     }catch(e){
         console.log(e);
     }
@@ -63,14 +71,13 @@ async function getMedia(deviceId){
         /* 화면에 비디오 화면 띄우기 */
         myFace.srcObject = myStream;
 
-        console.log(myStream.getVideoTracks());
+        //console.log(myStream.getVideoTracks());
     } catch(e) {
         /* 오류 처리 */
         console.log(e);
     }
 }
 
-getMedia();
 
 function handleMuteClick(){
     /* 오디오 트랙 정보 getAudioTracks() - enable 필드로 활성화 여부 변경 */
@@ -104,4 +111,50 @@ async function handleCameraChange(){
 muteBtn.addEventListener("click", handleMuteClick);
 cameraBtn.addEventListener("click", handleCameraClick);
 camerasSelect.addEventListener("input", handleCameraChange);
+
+/* Welcome - Room 선택 */
+
+async function startMedia(){
+    welcome.hidden = true;
+    call.hidden = false;
+    await getMedia();
+    makeConnection();
+}
+
+function handleWelcomeSubmit(event){
+    event.preventDefault();
+    const input = welcomeForm.querySelector("input");
+    socket.emit("join_room", input.value, startMedia);
+    roomName = input.value;
+    input.value = "";
+}
+
+welcomeForm.addEventListener("submit", handleWelcomeSubmit);
+
+
+// Socket
+
+// 누군가 특정 룸에 입장했을 경우 (입장한 본인 제외 실행)
+socket.on("welcome", async () => {
+    /* 참조 : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createOffer */
+    const offer = await myPeerConnection.createOffer();
+    myPeerConnection.setLocalDescription(offer);
+
+    /* 입장한 사람에게 보내기 */
+    console.log("sent the offer")
+    socket.emit("offer", offer, roomName);
+});
+
+socket.on("offer", async (offer) => {
+    console.log(offer);
+});
+
+// RTC
+
+function makeConnection(){
+    myPeerConnection = new RTCPeerConnection();
+
+    /* myStream 데이터 저장하기 - P2P 로 데이터 보내기 위함 */
+    myStream.getTracks().forEach(track => myPeerConnection.addTrack(track, myStream));
+}
 
