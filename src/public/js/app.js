@@ -114,17 +114,19 @@ camerasSelect.addEventListener("input", handleCameraChange);
 
 /* Welcome - Room 선택 */
 
-async function startMedia(){
+async function initCall(){
     welcome.hidden = true;
     call.hidden = false;
     await getMedia();
     makeConnection();
 }
 
-function handleWelcomeSubmit(event){
+async function handleWelcomeSubmit(event){
     event.preventDefault();
     const input = welcomeForm.querySelector("input");
-    socket.emit("join_room", input.value, startMedia);
+    /* emit으로 보내지 않고, join 전에 실행 */
+    await initCall();
+    socket.emit("join_room", input.value);
     roomName = input.value;
     input.value = "";
 }
@@ -146,12 +148,21 @@ socket.on("welcome", async () => {
 });
 
 socket.on("offer", async (offer) => {
-    console.log(offer);
+    myPeerConnection.setRemoteDescription(offer);
+    const answer = await myPeerConnection.createAnswer();
+    myPeerConnection.setLocalDescription(answer);
+
+    socket.emit("answer", answer);
 });
+
+socket.on("answer", (answer)=>{
+    myPeerConnection.setRemoteDescription(answer);
+})
 
 // RTC
 
 function makeConnection(){
+    // Server.js 에서 callback으로 실행하면 너무 빠르게 일어나서 offer의 setRemoteDescription때 에러가 발생
     myPeerConnection = new RTCPeerConnection();
 
     /* myStream 데이터 저장하기 - P2P 로 데이터 보내기 위함 */
