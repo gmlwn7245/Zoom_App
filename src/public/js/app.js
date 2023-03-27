@@ -18,13 +18,20 @@ const welcome = document.getElementById("welcome");
 const welcomeForm = welcome.querySelector("form");
 const call = document.getElementById("call");
 
-call.hidden = true;
+const chat = document.getElementById("chat");
+const chatForm = chat.querySelector("form");
+
+const stream = call.querySelector("div");
+
+call.style.display='none';
+chat.style.display='none';
 
 let myStream;
 let muted = false;
 let cameraOff = false;
 let roomName;
 let myPeerConnection;
+let myDataChannel;
 
 async function getCameras() {
     try{
@@ -53,14 +60,14 @@ async function getCameras() {
 // 참조 : https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
 async function getMedia(deviceId){
     const initalConstraints = {
-        audio:true,
+        audio:true,  
         video: { 
             facingMode : "user"     // 후면카메라 - facingMode : "environment"
         }
     }
 
     const cameraConstraints = {
-        audio:true,
+        audio:true,  
         deviceId: {
             exact : deviceId        // 특정 deviceId로 카메라 설정
         }
@@ -99,6 +106,7 @@ function handleMuteClick(){
     }
     console.log("click Mute BTN");
 }
+
 function handleCameraClick(){
     /* 비디오 트랙 정보 getVideoTracks() - enable 필드로 활성화 여부 변경 */
     myStream.getVideoTracks().forEach(track => (track.enabled = !track.enabled));
@@ -123,15 +131,20 @@ async function handleCameraChange(){
     }
 }
 
+
 muteBtn.addEventListener("click", handleMuteClick);
 cameraBtn.addEventListener("click", handleCameraClick);
 camerasSelect.addEventListener("input", handleCameraChange);
+
+
+
 
 /* Welcome - Room 선택 */
 
 async function initCall(){
     welcome.hidden = true;
-    call.hidden = false;
+    call.style.display='inline-flex';
+    chat.style.display='block';
     await getMedia();
     makeConnection();
 }
@@ -141,6 +154,11 @@ async function handleWelcomeSubmit(event){
     const input = welcomeForm.querySelector("input");
     /* emit으로 보내지 않고, join 전에 실행 */
     await initCall();
+
+    const header = document.querySelector("header");
+    const h1 = header.querySelector("h1");
+    h1.textContent = "ROOM - "+input.value;
+
     socket.emit("join_room", input.value);
     roomName = input.value;
     input.value = "";
@@ -149,10 +167,42 @@ async function handleWelcomeSubmit(event){
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
 
+/* Chat - Message 전송 */
+function handleChatSubmit(event){
+    event.preventDefault();
+    const input = chatForm.querySelector("input");
+
+    message = input.value;
+    socket.emit("chat", message, roomName);
+    addMessage("나 : " +message);
+    input.value="";
+}
+socket.on("show_message", (message) => {
+    console.log(message);
+    addMessage("상대 : "+message);
+});
+
+function addMessage(message){
+    const ul = chat.querySelector("ul");
+    const li = document.createElement("li");
+    const showChat = chat.querySelector("div");
+    li.innerText = message;
+    ul.appendChild(li);
+    showChat.scrollTop = showChat.scrollHeight;
+}
+
+
+
+chatForm.addEventListener("submit", handleChatSubmit);
+
 // Socket
 
 // 누군가 특정 룸에 입장했을 경우 (입장한 본인 제외 실행)
 socket.on("welcome", async () => {
+    myDataChannel = myPeerConnection.createDataChannel("chat");
+    myDataChannel.addEventListener("message", console.log);
+    console.log("made Data Channel");
+
     /* 참조 : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createOffer */
     const offer = await myPeerConnection.createOffer();
     myPeerConnection.setLocalDescription(offer);
@@ -163,6 +213,11 @@ socket.on("welcome", async () => {
 });
 
 socket.on("offer", async (offer) => {
+    myPeerConnection.addEventListener("datachannel", (event) => {
+        myDataChannel = event.channel;
+        myDataChannel.addEventListener("message", console.log);
+    });
+
     console.log("received the offer");
 
     myPeerConnection.setRemoteDescription(offer);
@@ -187,7 +242,27 @@ socket.on("ice", (ice) => {
 
 function makeConnection(){
     // Server.js 에서 callback으로 실행하면 너무 빠르게 일어나서 offer의 setRemoteDescription때 에러가 발생
-    myPeerConnection = new RTCPeerConnection();
+    myPeerConnection = new RTCPeerConnection(
+
+    /*    STUN Server
+    {
+        // GOOGLE STUN Server Ref : https://gist.github.com/zziuni/3741933
+        iceServers: [
+            {
+                urls: [
+                    "stun:stun.l.google.com:19302",
+                    "stun:stun1.l.google.com:19302",
+                    "stun:stun2.l.google.com:19302",
+                    "stun:stun3.l.google.com:19302",
+                    "stun:stun4.l.google.com:19302"
+                ]
+            }
+        ]
+    } 
+    // Doesn't Work
+    */
+    );
+    
     myPeerConnection.addEventListener("icecandidate", handleIce);
     myPeerConnection.addEventListener("track", handleTrack);
 
@@ -207,4 +282,7 @@ function handleIce(data) {
     console.log("Sent Candidate");
     socket.emit("ice", data.candidate, roomName);
 }
+
+// DataChannel
+
 

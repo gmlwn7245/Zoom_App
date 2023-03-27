@@ -1,0 +1,86 @@
+
+body {
+    align-items: center;
+}
+
+main {
+    margin:auto;
+    display: table;
+    background-color: aliceblue;
+    border:solid 5px darkcyan;
+}
+
+video {
+    display: block;
+}
+
+button {
+    margin:5px;
+    background-color: lightblue;
+    border-width: 3px;
+    border-color: whitesmoke;
+    color: darkslategrey;
+}
+
+input {
+    margin:auto;
+}
+
+
+div#welcome form{
+    display: flex;
+    width: 500px;
+}
+
+div#welcome input{
+    height: 70px;
+}
+
+div#setting {
+    margin: auto;
+    text-align: center;
+}
+div#call {
+    white-space: nowrap;
+    display:inline-flex;
+}
+
+div#myStream {
+    white-space: nowrap;
+    margin-left : 50px;
+    margin-right: 50px;
+}
+
+div#peerStream{
+    white-space: nowrap;
+    margin-left : 50px;
+    margin-right: 50px;
+}
+
+div#chat {
+    display: block;
+}
+
+#cameras {
+    margin: auto;
+}
+
+div#chat form {
+    margin:auto;
+    background-color: white;
+    display: flex;
+    padding : 10px;
+    width: 100%;
+}
+
+div#showChatting {
+    height:250px;
+    overflow-y: scroll;
+    background-color: white;
+    margin : 15px;
+    border: solid 5px darkgray;
+}
+
+li {
+    font-size: 15pt;
+}

@@ -6,20 +6,30 @@ html(lang="en")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         title KHJ 
         link(rel="stylesheet", href="https://unpkg.com/mvp.css@1.12/mvp.css")
-    body 
+        style
+            include style.css
+    body  
         header 
-            h1 Huiju's Page
+            h1 KHJ Page
         main
             div#welcome 
                 form
                     input(placeholder="Room Name", required, type="text")
                     button Enter Room
-            div#call
+            div#call(white-space=nowrap)
                 div#myStream
                     video#myFace(autoplay, playsinline, width="400", height="400")
-                    button#mute Mute 
-                    button#camera Turn Camera Off
-                    select#cameras
+                    div#setting
+                        button#mute Mute 
+                        button#camera Turn Camera Off
+                        select#cameras
+                div#peerStream
                     video#peerFace(autoplay, playsinline, width="400", height="400")
+            div#chat
+                div#showChatting
+                    ul
+                form
+                    input(placeholder="Write your message!", required, type="text")
+                    button#msg Send
         script(src="/socket.io/socket.io.js")     
         script(src="/public/js/app.js") 
