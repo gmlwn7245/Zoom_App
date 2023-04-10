@@ -17,6 +17,17 @@ const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
 wsServer.on("connection", socket => {
+    socket.on("check", (roomName, isFulled)=> {
+        let rn = wsServer.sockets.adapter.rooms.get(roomName);
+        console.log(roomName);
+        if(rn == undefined)
+            isFulled(false);
+        else if(rn.size < 2)
+            isFulled(false);
+        else 
+            isFulled(true);
+    });
+
     /* room 입장 - (App.js) 유저들로부터 offer 받기 */
     socket.on("join_room", (roomName)=> {
         socket.join(roomName);

@@ -93,7 +93,6 @@ async function getMedia(deviceId){
     }
 }
 
-
 function handleMuteClick(){
     /* 오디오 트랙 정보 getAudioTracks() - enable 필드로 활성화 여부 변경 */
     myStream.getAudioTracks().forEach(track => (track.enabled = !track.enabled));
@@ -139,6 +138,7 @@ camerasSelect.addEventListener("input", handleCameraChange);
 
 
 
+
 /* Welcome - Room 선택 */
 
 async function initCall(){
@@ -149,19 +149,31 @@ async function initCall(){
     makeConnection();
 }
 
+async function isFulled(isFull){
+    if(isFull){
+        console.log("fulled");
+        swal('입장 불가',"방의 인원이 모두 찼습니다.",'warning');
+    } else {
+        const input = welcomeForm.querySelector("input");
+        console.log("not fulled");
+        /* emit으로 보내지 않고, join 전에 실행 */
+        await initCall();
+
+        const header = document.querySelector("header");
+        const h1 = header.querySelector("h1");
+        h1.textContent = "ROOM - "+input.value;
+
+        socket.emit("join_room", input.value);
+        roomName = input.value;
+        input.value = "";
+    }
+    
+}
+
 async function handleWelcomeSubmit(event){
     event.preventDefault();
     const input = welcomeForm.querySelector("input");
-    /* emit으로 보내지 않고, join 전에 실행 */
-    await initCall();
-
-    const header = document.querySelector("header");
-    const h1 = header.querySelector("h1");
-    h1.textContent = "ROOM - "+input.value;
-
-    socket.emit("join_room", input.value);
-    roomName = input.value;
-    input.value = "";
+    socket.emit("check", input.value, isFulled);
 }
 
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
@@ -282,7 +294,3 @@ function handleIce(data) {
     console.log("Sent Candidate");
     socket.emit("ice", data.candidate, roomName);
 }
-
-// DataChannel
-
-
