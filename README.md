@@ -1,7 +1,13 @@
 ## Zoom Application
 
-WebSocket과 WebRTC를 이용한 줌 클론 만들기 
+Socket.IO과 WebRTC를 이용한 줌 클론 만들기 
 
+
+
+## Simulation
+
+
+https://user-images.githubusercontent.com/62199070/231124146-1a479f7b-cbb8-437c-926a-a714654d9aa8.mp4
 
 
 
@@ -11,8 +17,6 @@ WebSocket과 WebRTC를 이용한 줌 클론 만들기
 - JavaScript
 - PUG
 - VSCode
-- Node.js
-- Express
 - [SocketIO](https://socket.io/)
 - WebSocket
 - [WebRTC](https://webrtc.org/?hl=ko)
