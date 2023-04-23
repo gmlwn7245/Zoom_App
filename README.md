@@ -7,7 +7,9 @@ Socket.IO과 WebRTC를 이용한 줌 클론 만들기
 ## Simulation
 
 
-https://user-images.githubusercontent.com/62199070/231124146-1a479f7b-cbb8-437c-926a-a714654d9aa8.mp4
+https://user-images.githubusercontent.com/62199070/233848831-0209b274-98c0-47e7-9b39-9f190b124270.mp4
+
+
 
 
 
